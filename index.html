@@ -1029,7 +1029,26 @@ function decade(year) {
   const d = Math.floor(year / 10) * 10;
   return d + '-е';
 }
-function unique(arr) { return [...new Set(arr)].sort(); }
+function unique(arr) { return [...new Set(arr)].sort((a, b) => a.localeCompare(b, 'ru')); }
+
+// Первая буква фамилии (последнее слово имени/названия)
+function artistLetter(name) {
+  const parts = name.trim().split(/\s+/);
+  return parts[parts.length - 1][0].toUpperCase();
+}
+
+// Ключ для сортировки по фамилии
+function sortKey(name) {
+  const parts = name.trim().split(/\s+/);
+  return parts[parts.length - 1].toLowerCase();
+}
+
+// Сортируем RECORDS по фамилии исполнителя, затем по названию
+RECORDS.sort((a, b) => {
+  const la = sortKey(a.artist), lb = sortKey(b.artist);
+  const cmp = la.localeCompare(lb, 'ru');
+  return cmp !== 0 ? cmp : a.title.localeCompare(b.title, 'ru');
+});
 
 // ─── Lightbox ───
 function openLightbox(src, caption) {
@@ -1062,7 +1081,7 @@ function buildFilters() {
     });
   }
 
-  const letters = unique(RECORDS.map(r => r.artist[0].toUpperCase())).sort((a, b) => a.localeCompare(b, 'ru'));
+  const letters = [...new Set(RECORDS.map(r => artistLetter(r.artist)))].sort((a, b) => a.localeCompare(b, 'ru'));
   populate('sel-letter', letters);
   populate('sel-artist', artists);
   populate('sel-decade', decades);
@@ -1077,6 +1096,7 @@ function buildCards() {
   RECORDS.forEach(r => {
     const card = document.createElement('div');
     card.className = 'card';
+    card.dataset.letter = artistLetter(r.artist);
     card.dataset.artist = r.artist;
     card.dataset.decade = decade(r.year);
     card.dataset.country = r.country || '';
@@ -1157,7 +1177,7 @@ function applyFilters() {
   let shown = 0;
   cards.forEach(card => {
     const match =
-      (filters.letter === 'all' || card.dataset.artist[0].toUpperCase() === filters.letter) &&
+      (filters.letter === 'all' || card.dataset.letter === filters.letter) &&
       (filters.artist === 'all' || card.dataset.artist === filters.artist) &&
       (filters.decade === 'all' || card.dataset.decade === filters.decade) &&
       (filters.country === 'all' || card.dataset.country === filters.country) &&
