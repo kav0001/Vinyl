@@ -560,6 +560,12 @@
 <div class="filters-wrapper">
   <div class="filters-row">
     <div class="filter-group">
+      <span class="filter-label">Буква</span>
+      <select class="filter-select" id="sel-letter" data-filter="letter">
+        <option value="all">А–Я</option>
+      </select>
+    </div>
+    <div class="filter-group">
       <span class="filter-label">Исполнитель</span>
       <select class="filter-select" id="sel-artist" data-filter="artist">
         <option value="all">Все</option>
@@ -1015,7 +1021,7 @@ const COMPILATIONS = [
 ];
 
 // ─── State ───
-let filters = { artist: 'all', decade: 'all', country: 'all', label: 'all' };
+let filters = { letter: 'all', artist: 'all', decade: 'all', country: 'all', label: 'all' };
 let searchQ = '';
 
 // ─── Helpers ───
@@ -1056,6 +1062,8 @@ function buildFilters() {
     });
   }
 
+  const letters = unique(RECORDS.map(r => r.artist[0].toUpperCase())).sort((a, b) => a.localeCompare(b, 'ru'));
+  populate('sel-letter', letters);
   populate('sel-artist', artists);
   populate('sel-decade', decades);
   populate('sel-country', countries);
@@ -1149,6 +1157,7 @@ function applyFilters() {
   let shown = 0;
   cards.forEach(card => {
     const match =
+      (filters.letter === 'all' || card.dataset.artist[0].toUpperCase() === filters.letter) &&
       (filters.artist === 'all' || card.dataset.artist === filters.artist) &&
       (filters.decade === 'all' || card.dataset.decade === filters.decade) &&
       (filters.country === 'all' || card.dataset.country === filters.country) &&
