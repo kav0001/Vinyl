@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Коллекция пластинок</title>
+<style>
+  :root {
+    --bg: #0e0e0e;
+    --bg2: #181818;
+    --bg3: #222;
+    --gold: #c9a84c;
+    --gold2: #e8c96a;
+    --text: #f0ede8;
+    --muted: #888;
+    --border: #2e2e2e;
+    --red: #cc2222;
+    --groove: rgba(201,168,76,0.12);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Georgia', serif;
+    min-height: 100vh;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    background: linear-gradient(160deg, #1a1200 0%, #0e0e0e 60%);
+    border-bottom: 1px solid var(--border);
+    padding: 40px 40px 30px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    right: -60px; top: -60px;
+    width: 320px; height: 320px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(201,168,76,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .vinyl-icon {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%,
+      #111 0%, #111 18%,
+      #1e1e1e 19%, #1e1e1e 25%,
+      #161616 26%, #161616 33%,
+      #1e1e1e 34%, #1e1e1e 41%,
+      #161616 42%, #161616 49%,
+      #1e1e1e 50%, #1e1e1e 57%,
+      #161616 58%, #161616 65%,
+      #1e1e1e 66%, #1e1e1e 73%,
+      #111 74%);
+    border: 3px solid #2a2a2a;
+    box-shadow: 0 0 0 2px var(--gold), 0 8px 32px rgba(0,0,0,0.7);
+    animation: spin 8s linear infinite;
+    flex-shrink: 0;
+  }
+  .vinyl-icon::after {
+    content: '';
+    display: block;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--gold);
+    margin: 28px auto 0;
+  }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  .header-text h1 {
+    font-size: 2rem;
+    font-weight: normal;
+    letter-spacing: 0.06em;
+    color: var(--gold2);
+    text-shadow: 0 2px 20px rgba(201,168,76,0.3);
+  }
+  .header-text p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-top: 4px;
+    font-style: italic;
+    letter-spacing: 0.03em;
+  }
+
+  /* ─── STATS BAR ─── */
+  .stats {
+    display: flex;
+    gap: 32px;
+    padding: 16px 40px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+  .stats span { color: var(--gold2); font-size: 1.1rem; font-style: normal; margin-right: 4px; }
+
+  /* ─── FILTERS ─── */
+  .filters-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 40px;
+    backdrop-filter: blur(12px);
+  }
+  .filters-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .filter-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--gold);
+    white-space: nowrap;
+    padding-top: 2px;
+  }
+  .chip {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    font-size: 0.78rem;
+    cursor: pointer;
+    color: var(--muted);
+    background: var(--bg3);
+    transition: all 0.2s;
+    user-select: none;
+    white-space: nowrap;
+    font-family: inherit;
+  }
+  .chip:hover { border-color: var(--gold); color: var(--gold); }
+  .chip.active {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: #111;
+    font-weight: bold;
+  }
+  .chip.reset { border-color: #444; color: #666; }
+  .chip.reset:hover { border-color: #c00; color: #c00; }
+  .chip.reset.active { background: #333; border-color: #555; color: var(--muted); font-weight: normal; }
+
+  /* ─── SEARCH ─── */
+  .search-wrap {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .search-wrap input {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 14px;
+    color: var(--text);
+    font-size: 0.82rem;
+    font-family: inherit;
+    outline: none;
+    width: 180px;
+    transition: border-color 0.2s;
+  }
+  .search-wrap input::placeholder { color: var(--muted); }
+  .search-wrap input:focus { border-color: var(--gold); }
+
+  /* ─── GRID ─── */
+  main {
+    padding: 32px 40px;
+  }
+  .count-line {
+    font-size: 0.8rem;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 24px;
+  }
+  .count-line strong { color: var(--gold2); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 24px;
+  }
+
+  /* ─── CARD ─── */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: default;
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,168,76,0.15);
+  }
+  .card.hidden { display: none; }
+
+  .cover-wrap {
+    position: relative;
+    width: 100%;
+    padding-top: 100%;
+    background: #111;
+    overflow: hidden;
+  }
+  .cover-wrap img {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s;
+  }
+  .card:hover .cover-wrap img { transform: scale(1.04); }
+  .cover-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .cover-placeholder .vinyl-sm {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%,
+      #222 0%, #222 20%, #2a2a2a 21%, #2a2a2a 32%,
+      #222 33%, #222 45%, #2a2a2a 46%, #2a2a2a 58%,
+      #222 59%, #222 70%, #111 71%);
+    border: 2px solid #333;
+    opacity: 0.5;
+  }
+
+  .format-badge {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: rgba(0,0,0,0.75);
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    padding: 2px 8px;
+    border-radius: 4px;
+    backdrop-filter: blur(4px);
+  }
+
+  .card-body {
+    padding: 14px 16px 0;
+  }
+  .card-artist {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+  .card-title {
+    font-size: 1rem;
+    line-height: 1.3;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .tag {
+    font-size: 0.68rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+  .tag.year { border-color: #c9a84c44; color: var(--gold); }
+  .tag.country { border-color: #3a3a5a; color: #9090d0; }
+  .tag.label { border-color: #2e2e2e; }
+
+  /* ─── TRACKLIST ACCORDION ─── */
+  .tracklist-toggle {
+    width: 100%;
+    background: var(--bg3);
+    border: none;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: color 0.2s;
+    font-family: inherit;
+  }
+  .tracklist-toggle:hover { color: var(--gold2); }
+  .tracklist-toggle .arrow {
+    transition: transform 0.25s;
+    font-size: 0.8rem;
+  }
+  .tracklist-toggle.open .arrow { transform: rotate(180deg); }
+
+  .tracklist {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    background: var(--bg3);
+  }
+  .tracklist.open { max-height: 500px; }
+  .tracklist ol {
+    list-style: none;
+    padding: 8px 16px 12px;
+  }
+  .tracklist ol li {
+    font-size: 0.75rem;
+    color: #aaa;
+    padding: 3px 0;
+    border-bottom: 1px solid #2a2a2a;
+    display: flex;
+    gap: 8px;
+    line-height: 1.4;
+  }
+  .tracklist ol li:last-child { border-bottom: none; }
+  .tracklist ol li::before {
+    content: counter(item);
+    counter-increment: item;
+    color: var(--gold);
+    font-size: 0.65rem;
+    min-width: 14px;
+    margin-top: 1px;
+  }
+  .tracklist ol { counter-reset: item; }
+  .tracklist .no-tracks {
+    font-size: 0.72rem;
+    color: #555;
+    padding: 8px 16px 12px;
+    font-style: italic;
+  }
+
+  /* ─── EMPTY STATE ─── */
+  .empty {
+    display: none;
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--muted);
+  }
+  .empty.visible { display: block; }
+  .empty .big { font-size: 3rem; margin-bottom: 12px; opacity: 0.3; }
+
+  /* ─── FOOTER ─── */
+  footer {
+    margin-top: 60px;
+    padding: 24px 40px;
+    border-top: 1px solid var(--border);
+    color: #444;
+    font-size: 0.75rem;
+    text-align: center;
+    letter-spacing: 0.06em;
+  }
+  footer span { color: var(--gold); }
+
+  @media (max-width: 600px) {
+    header, .stats, .filters-wrapper, main { padding-left: 16px; padding-right: 16px; }
+    .header-text h1 { font-size: 1.4rem; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+    .search-wrap { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="vinyl-icon"></div>
+  <div class="header-text">
+    <h1>Коллекция пластинок</h1>
+    <p>Русские исполнители · Раздел А–Б (пробная версия)</p>
+  </div>
+</header>
+
+<div class="stats">
+  <div><span id="totalCount">—</span> пластинок</div>
+  <div><span id="artistCount">—</span> исполнителей</div>
+  <div><span id="countryCount">—</span> стран</div>
+  <div><span id="decadeSpan">—</span> лет охвата</div>
+</div>
+
+<div class="filters-wrapper">
+  <div class="filters-row">
+    <div class="filter-group">
+      <span class="filter-label">Исполнитель</span>
+      <button class="chip active" data-filter="artist" data-value="all">Все</button>
+      <!-- dynamically filled -->
+    </div>
+    <div class="filter-group" id="fg-decade">
+      <span class="filter-label">Эпоха</span>
+      <button class="chip active" data-filter="decade" data-value="all">Все</button>
+    </div>
+    <div class="filter-group" id="fg-country">
+      <span class="filter-label">Страна</span>
+      <button class="chip active" data-filter="country" data-value="all">Все</button>
+    </div>
+    <div class="filter-group" id="fg-label">
+      <span class="filter-label">Лейбл</span>
+      <button class="chip active" data-filter="label" data-value="all">Все</button>
+    </div>
+    <div class="search-wrap">
+      <input type="text" id="searchInput" placeholder="🔍  Поиск...">
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="count-line">Показано: <strong id="shownCount">—</strong></div>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty">
+    <div class="big">◉</div>
+    <div>Ничего не найдено по заданным фильтрам</div>
+  </div>
+</main>
+
+<footer>Коллекция винила · <span>Исполнители А–Б</span> · Пробная версия реестра</footer>
+
+<script>
+const RECORDS = [
+  {
+    artist: "БИ-2",
+    title: "Аллилуйя",
+    year: 2022,
+    label: "М2 / BDVA.RU",
+    country: "Россия",
+    format: "2LP",
+    cover: "1 волна/photo_2026-03-22 11.21.58.jpeg",
+    tracks: ["Колыбельная","Пекло","Нам не нужен герой","Аллилуйя","Депрессия","Я никому не верю","Беглый огонь","Бог проклятых","Троллейбус","Личное пространство","Пылающий мир","Волки (2022 version)"]
+  },
+  {
+    artist: "БИ-2",
+    title: "Горизонт событий",
+    year: 2022,
+    label: "BDVA.RU",
+    country: "Россия",
+    format: "2LP",
+    cover: "1 волна/photo_2026-03-22 11.21.59.jpeg",
+    tracks: ["Летим","Новые города","Сны двух","Идти так","Японский самец","Сома","Моя проблема","Черта безопасной фобии","Радио","Город, в котором..."]
+  },
+  {
+    artist: "БИ-2",
+    title: "БИ-2 и Симфонический оркестр МВД России",
+    year: 2019,
+    label: "М2 / Наше Радио",
+    country: "Германия",
+    format: "3LP",
+    cover: "1 волна/photo_2026-03-22 11.22.01.jpeg",
+    tracks: ["Intro","Зажигать","Последний герой","И корабль плывёт","Достучаться до небес","Небо без края (feat. И. Желанная)","Скользкие улицы (feat. BrainStorm)","Теряю голову","Фламенко","Мой рок-н-ролл (feat. Чичерина)","Моя любовь","Медленная звезда (feat. Д. Арбенина)","Реки","Дурочка","Научи меня быть счастливым (feat. Вельвет)","С тобой","Из-за меня (feat. Д. Арбенина)","Прощай, Берлин","В этом городе (feat. И. Желанная)","Барбара","Забери меня (feat. И. Желанная)","Небо","Провидение новой луны (feat. Т. Кузнецова)","Волки","Половинки никто не пишет","Серебро"]
+  },
+  {
+    artist: "Александр Буйнов",
+    title: "Билет на Копенгаген",
+    year: 1991,
+    label: "Мелодия",
+    country: "СССР",
+    format: "LP",
+    cover: "1 волна/photo_2026-03-22 11.22.04.jpeg",
+    tracks: ["Музыка играет","Депрессия","Бросаю курить","А дело в том","В городе Сочи","В тихом омуте","Рождество","Улыбнитесь и Вы","Билет на Копенгаген","Открытое окно"]
+  },
+  {
+    artist: "Владимир Высоцкий",
+    title: "Светлой памяти Владимира Высоцкого",
+    year: 1984,
+    label: "CBC Inc. / Snareacem",
+    country: "Франция",
+    format: "LP",
+    cover: "1 волна/photo_2026-03-22 11.22.06.jpeg",
+    tracks: []
+  },
+  {
+    artist: "Владимир Высоцкий",
+    title: "Песни 1963–1965 годов (Альбом №3)",
+    year: 1984,
+    label: "Клуб самодеятельной песни",
+    country: "СССР",
+    format: "LP",
+    cover: null,
+    tracks: ["Весна ещё в начале...","Сколько лет, сколько лет...","Если б водка была на одного...","У меня гитара есть...","Я любил и женщин, и проказы...","Однажды гулял по столице...","Сегодня я с большой охотой...","Где твои семнадцать лет...","Нам ни к чему сюжеты и интриги...","Нынче все сроки закончены...","Сыт я по горло, до подбородка...","Дайте собакам мяса...","Жил я с матерью и батей на Арбате...","На границе с Турцией или с Пакистаном...","Дела, меня замучали дела...","Сегодня в нашей комплексной бригаде..."]
+  },
+  {
+    artist: "Владимир Высоцкий",
+    title: "Песни",
+    year: 1981,
+    label: "Мелодия",
+    country: "СССР",
+    format: "LP",
+    cover: "1 волна/photo_2026-03-22 11.22.08 (1).jpeg",
+    tracks: ["Песня о друге","Он не вернулся из боя","Прощание с горами","Скалолазка","Жираф","Вершина","Сыновья уходят в бой","Лирическая","Ноль семь","Утренняя гимнастика","Корабли"]
+  },
+  {
+    artist: "Юрий Антонов",
+    title: "Долгожданный самолёт",
+    year: 1986,
+    label: "Мелодия",
+    country: "СССР",
+    format: "LP",
+    cover: "1 волна/photo_2026-03-22 11.22.09.jpeg",
+    tracks: ["Долгожданный самолёт","Стеклянная ночь","На высоком берегу","Милая моя","О тебе и обо мне","Каникулы","А жизнь идёт своим чередом","А где-то...","Понимаешь лишь с годами"]
+  },
+  {
+    artist: "Юрий Антонов",
+    title: "Поверь в мечту",
+    year: 1985,
+    label: "Мелодия",
+    country: "СССР",
+    format: "LP",
+    cover: "1 волна/photo_2026-03-22 11.22.15.jpeg",
+    tracks: ["Поверь в мечту","Уходит молодость моя","Мне жалеть не о чём","Мой путь прост","На улице Каштановой","Если пойдём вдвоём","Снегири","Дай мне руку"]
+  },
+  {
+    artist: "Юрий Антонов",
+    title: "Крыша дома твоего",
+    year: 1983,
+    label: "Мелодия",
+    country: "СССР",
+    format: "LP",
+    cover: "1 волна/photo_2026-03-22 11.22.19.jpeg",
+    tracks: ["Жизнь","Вот как бывает","Море","Зеркало","Я вспоминаю","Двадцать лет спустя","Не забывай","Анастасия","Золотая лестница","Дорога к морю","Крыша дома твоего"]
+  },
+  {
+    artist: "Юрий Антонов",
+    title: "От печали до радости",
+    year: 1986,
+    label: "Мелодия",
+    country: "СССР",
+    format: "LP",
+    cover: "1 волна/photo_2026-03-22 11.22.16.jpeg",
+    tracks: ["От печали до радости","Я тебя не забуду","Завтра","Гадкий утёнок","Всё как прежде","Колокол тревоги","С чего начать","Солнечная поляна","Радуга"]
+  }
+];
+
+// ─── State ───
+let filters = { artist: 'all', decade: 'all', country: 'all', label: 'all' };
+let searchQ = '';
+
+// ─── Helpers ───
+function decade(year) {
+  if (year >= 1980 && year <= 1989) return '1980-е';
+  if (year >= 1990 && year <= 1999) return '1990-е';
+  if (year >= 2010 && year <= 2029) return '2020-е';
+  return String(Math.floor(year/10)*10) + '-е';
+}
+
+function unique(arr) { return [...new Set(arr)].sort(); }
+
+// ─── Build filter chips ───
+function buildFilters() {
+  const artists = unique(RECORDS.map(r => r.artist));
+  const decades = unique(RECORDS.map(r => decade(r.year)));
+  const countries = unique(RECORDS.map(r => r.country));
+  const labels = unique(RECORDS.map(r => r.label));
+
+  // Artist chips — insert after the "Все" button in first .filter-group
+  const fg0 = document.querySelectorAll('.filter-group')[0];
+  artists.forEach(a => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.dataset.filter = 'artist'; b.dataset.value = a;
+    b.textContent = a; fg0.appendChild(b);
+  });
+
+  const fgD = document.getElementById('fg-decade');
+  decades.forEach(d => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.dataset.filter = 'decade'; b.dataset.value = d;
+    b.textContent = d; fgD.appendChild(b);
+  });
+
+  const fgC = document.getElementById('fg-country');
+  countries.forEach(c => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.dataset.filter = 'country'; b.dataset.value = c;
+    b.textContent = c; fgC.appendChild(b);
+  });
+
+  const fgL = document.getElementById('fg-label');
+  labels.forEach(l => {
+    const b = document.createElement('button');
+    b.className = 'chip'; b.dataset.filter = 'label'; b.dataset.value = l;
+    b.textContent = l; fgL.appendChild(b);
+  });
+}
+
+// ─── Build cards ───
+function buildCards() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  RECORDS.forEach((r, i) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.artist = r.artist;
+    card.dataset.decade = decade(r.year);
+    card.dataset.country = r.country;
+    card.dataset.label = r.label;
+    card.dataset.search = (r.artist + ' ' + r.title + ' ' + r.tracks.join(' ')).toLowerCase();
+
+    const coverHTML = r.cover
+      ? `<img src="${r.cover}" alt="${r.title}" loading="lazy">`
+      : `<div class="cover-placeholder"><div class="vinyl-sm"></div></div>`;
+
+    const tracksHTML = r.tracks.length > 0
+      ? `<ol>${r.tracks.map(t => `<li>${t}</li>`).join('')}</ol>`
+      : `<div class="no-tracks">Трек-лист уточняется</div>`;
+
+    card.innerHTML = `
+      <div class="cover-wrap">
+        ${coverHTML}
+        <div class="format-badge">${r.format}</div>
+      </div>
+      <div class="card-body">
+        <div class="card-artist">${r.artist}</div>
+        <div class="card-title">${r.title}</div>
+        <div class="meta">
+          <span class="tag year">${r.year}</span>
+          <span class="tag country">${r.country}</span>
+          <span class="tag label">${r.label}</span>
+        </div>
+      </div>
+      <button class="tracklist-toggle" onclick="toggleTracks(this)">
+        <span>${r.tracks.length > 0 ? r.tracks.length + ' треков' : 'Трек-лист'}</span>
+        <span class="arrow">▾</span>
+      </button>
+      <div class="tracklist">${tracksHTML}</div>`;
+
+    grid.appendChild(card);
+  });
+}
+
+// ─── Toggle tracklist ───
+function toggleTracks(btn) {
+  btn.classList.toggle('open');
+  btn.nextElementSibling.classList.toggle('open');
+}
+
+// ─── Filter + Search ───
+function applyFilters() {
+  const cards = document.querySelectorAll('.card');
+  let shown = 0;
+  cards.forEach(card => {
+    const match =
+      (filters.artist === 'all' || card.dataset.artist === filters.artist) &&
+      (filters.decade === 'all' || card.dataset.decade === filters.decade) &&
+      (filters.country === 'all' || card.dataset.country === filters.country) &&
+      (filters.label === 'all' || card.dataset.label === filters.label) &&
+      (searchQ === '' || card.dataset.search.includes(searchQ.toLowerCase()));
+    card.classList.toggle('hidden', !match);
+    if (match) shown++;
+  });
+  document.getElementById('shownCount').textContent = shown + ' из ' + RECORDS.length;
+  document.getElementById('empty').classList.toggle('visible', shown === 0);
+}
+
+// ─── Chip click ───
+document.addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (!chip || !chip.dataset.filter) return;
+  const type = chip.dataset.filter;
+  const val = chip.dataset.value;
+  filters[type] = val;
+  // update active state for this filter group
+  document.querySelectorAll(`.chip[data-filter="${type}"]`).forEach(c => {
+    c.classList.toggle('active', c.dataset.value === val);
+  });
+  applyFilters();
+});
+
+// ─── Search ───
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchQ = e.target.value.trim();
+  applyFilters();
+});
+
+// ─── Stats ───
+function fillStats() {
+  document.getElementById('totalCount').textContent = RECORDS.length;
+  document.getElementById('artistCount').textContent = unique(RECORDS.map(r => r.artist)).length;
+  document.getElementById('countryCount').textContent = unique(RECORDS.map(r => r.country)).length;
+  const years = RECORDS.map(r => r.year);
+  document.getElementById('decadeSpan').textContent = (Math.max(...years) - Math.min(...years)) + '+';
+}
+
+// ─── Init ───
+buildFilters();
+buildCards();
+fillStats();
+applyFilters();
+</script>
+</body>
+</html>
