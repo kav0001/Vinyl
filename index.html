@@ -115,15 +115,14 @@
   }
   .filters-row {
     display: flex;
-    align-items: flex-start;
-    gap: 16px;
+    align-items: center;
+    gap: 12px;
     flex-wrap: wrap;
   }
   .filter-group {
     display: flex;
     align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
+    gap: 7px;
   }
   .filter-label {
     font-size: 0.68rem;
@@ -131,28 +130,34 @@
     letter-spacing: 0.12em;
     color: var(--gold);
     white-space: nowrap;
-    padding-top: 2px;
   }
-  .chip {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 20px;
-    border: 1px solid var(--border);
-    font-size: 0.76rem;
-    cursor: pointer;
-    color: var(--muted);
+  .filter-select {
     background: var(--bg3);
-    transition: all 0.2s;
-    user-select: none;
-    white-space: nowrap;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 28px 5px 12px;
+    color: var(--text);
+    font-size: 0.78rem;
     font-family: inherit;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    transition: border-color 0.2s, color 0.2s;
+    max-width: 180px;
   }
-  .chip:hover { border-color: var(--gold); color: var(--gold); }
-  .chip.active {
-    background: var(--gold);
+  .filter-select:hover { border-color: var(--gold); color: var(--gold); }
+  .filter-select:focus { border-color: var(--gold); }
+  .filter-select.active {
     border-color: var(--gold);
-    color: #111;
-    font-weight: bold;
+    color: var(--gold2);
+  }
+  .filter-select option {
+    background: #1e1e1e;
+    color: var(--text);
   }
 
   /* ─── SEARCH ─── */
@@ -519,7 +524,11 @@
     header, .stats, .filters-wrapper, main, .section-header, .section-grid, .cat-section { padding-left: 16px; padding-right: 16px; }
     .header-text h1 { font-size: 1.4rem; }
     .grid, .section-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
-    .search-wrap { margin-left: 0; }
+    .filters-row { gap: 8px; }
+    .filter-group { flex-direction: column; align-items: flex-start; gap: 3px; }
+    .filter-select { max-width: 100%; width: 100%; }
+    .search-wrap { margin-left: 0; width: 100%; }
+    .search-wrap input { width: 100%; }
     .cat-grid img { height: 160px; }
   }
 </style>
@@ -552,19 +561,27 @@
   <div class="filters-row">
     <div class="filter-group">
       <span class="filter-label">Исполнитель</span>
-      <button class="chip active" data-filter="artist" data-value="all">Все</button>
+      <select class="filter-select" id="sel-artist" data-filter="artist">
+        <option value="all">Все</option>
+      </select>
     </div>
-    <div class="filter-group" id="fg-decade">
+    <div class="filter-group">
       <span class="filter-label">Эпоха</span>
-      <button class="chip active" data-filter="decade" data-value="all">Все</button>
+      <select class="filter-select" id="sel-decade" data-filter="decade">
+        <option value="all">Все</option>
+      </select>
     </div>
-    <div class="filter-group" id="fg-country">
+    <div class="filter-group">
       <span class="filter-label">Страна</span>
-      <button class="chip active" data-filter="country" data-value="all">Все</button>
+      <select class="filter-select" id="sel-country" data-filter="country">
+        <option value="all">Все</option>
+      </select>
     </div>
-    <div class="filter-group" id="fg-label">
+    <div class="filter-group">
       <span class="filter-label">Лейбл</span>
-      <button class="chip active" data-filter="label" data-value="all">Все</button>
+      <select class="filter-select" id="sel-label" data-filter="label">
+        <option value="all">Все</option>
+      </select>
     </div>
     <div class="search-wrap">
       <input type="text" id="searchInput" placeholder="🔍  Поиск...">
@@ -1023,40 +1040,26 @@ function closeLightbox(e) {
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox({}); });
 
-// ─── Build filter chips ───
+// ─── Build filter selects ───
 function buildFilters() {
   const artists = unique(RECORDS.map(r => r.artist));
   const decades = unique(RECORDS.map(r => decade(r.year)));
   const countries = unique(RECORDS.map(r => r.country).filter(Boolean));
   const labels = unique(RECORDS.map(r => r.label));
 
-  const fg0 = document.querySelectorAll('.filter-group')[0];
-  artists.forEach(a => {
-    const b = document.createElement('button');
-    b.className = 'chip'; b.dataset.filter = 'artist'; b.dataset.value = a;
-    b.textContent = a; fg0.appendChild(b);
-  });
+  function populate(selId, values) {
+    const sel = document.getElementById(selId);
+    values.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v; opt.textContent = v;
+      sel.appendChild(opt);
+    });
+  }
 
-  const fgD = document.getElementById('fg-decade');
-  decades.forEach(d => {
-    const b = document.createElement('button');
-    b.className = 'chip'; b.dataset.filter = 'decade'; b.dataset.value = d;
-    b.textContent = d; fgD.appendChild(b);
-  });
-
-  const fgC = document.getElementById('fg-country');
-  countries.forEach(c => {
-    const b = document.createElement('button');
-    b.className = 'chip'; b.dataset.filter = 'country'; b.dataset.value = c;
-    b.textContent = c; fgC.appendChild(b);
-  });
-
-  const fgL = document.getElementById('fg-label');
-  labels.forEach(l => {
-    const b = document.createElement('button');
-    b.className = 'chip'; b.dataset.filter = 'label'; b.dataset.value = l;
-    b.textContent = l; fgL.appendChild(b);
-  });
+  populate('sel-artist', artists);
+  populate('sel-decade', decades);
+  populate('sel-country', countries);
+  populate('sel-label', labels);
 }
 
 // ─── Build artist record cards ───
@@ -1158,17 +1161,15 @@ function applyFilters() {
   document.getElementById('empty').classList.toggle('visible', shown === 0);
 }
 
-// ─── Chip click ───
-document.addEventListener('click', e => {
-  const chip = e.target.closest('.chip');
-  if (!chip || !chip.dataset.filter) return;
-  const type = chip.dataset.filter;
-  const val = chip.dataset.value;
-  filters[type] = val;
-  document.querySelectorAll(`.chip[data-filter="${type}"]`).forEach(c => {
-    c.classList.toggle('active', c.dataset.value === val);
+// ─── Select change ───
+document.querySelectorAll('.filter-select').forEach(sel => {
+  sel.addEventListener('change', e => {
+    const type = sel.dataset.filter;
+    const val = sel.value;
+    filters[type] = val;
+    sel.classList.toggle('active', val !== 'all');
+    applyFilters();
   });
-  applyFilters();
 });
 
 // ─── Search ───
